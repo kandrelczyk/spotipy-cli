@@ -21,16 +21,13 @@ setup(
     zip_safe=False,
     platforms='any',
     install_requires=dependencies,
+    setup_requires=['wheel'],
     entry_points={
         'console_scripts': [
             'spotipy-cli = spotipy_cli.__main__:main',
         ],
     },
     classifiers=[
-        # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
-        # 'Development Status :: 1 - Planning',
-        # 'Development Status :: 2 - Pre-Alpha',
-        # 'Development Status :: 3 - Alpha',
         'Development Status :: 4 - Beta',
         # 'Development Status :: 5 - Production/Stable',
         # 'Development Status :: 6 - Mature',
