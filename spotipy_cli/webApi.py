@@ -2,12 +2,15 @@ import requests
 import sys
 import base64
 import json
-
+from .config import REFRESH_TOKEN, ACCESS_TOKEN
 from .auth import spotipyAuth
+
+API_URL = 'https://api.spotify.com/v1/me/{}'
+TOKEN_URL = 'https://accounts.spotify.com/api/token'
 
 
 class WebApi:
-    apiUrl = 'https://api.spotify.com/v1/me/{}'
+    apiUrl = API_URL
 
     def __init__(self, config):
         self.config = config
@@ -20,13 +23,11 @@ class WebApi:
         else:
             self.__refresh_token()
 
-        if not hasattr(config, 'deviceId'):
-            deviceId = self.__get_device()
-            config.store_device_id(deviceId)
+        deviceId = self.__get_device()
 
-        if hasattr(config, 'deviceId'):
+        if deviceId is not None:
             self.params = {
-                'device_id': config.deviceId,
+                'device_id': deviceId,
                 'volume_percent': config.volume
             }
             self.initialised = True
@@ -35,18 +36,18 @@ class WebApi:
 
     def play(self):
         data = {'device_ids': [self.params['device_id']]}
-        self.__request('PUT', self.apiUrl.format('player'), data=json.dumps(data))
-        res = self.__request('GET', self.apiUrl.format('player'))
+        self.__request('PUT', API_URL.format('player'), data=json.dumps(data))
+        res = self.__request('GET', API_URL.format('player'))
         isPlaying = res['is_playing']
         action = 'player/pause' if isPlaying else 'player/play'
-        self.__request('PUT', self.apiUrl.format('player/volume'), self.params)
-        self.__request('PUT', self.apiUrl.format(action), self.params)
+        self.__request('PUT', API_URL.format('player/volume'), self.params)
+        self.__request('PUT', API_URL.format(action), self.params)
 
     def next(self):
-        self.__request('POST', self.apiUrl.format('player/next'), self.params)
+        self.__request('POST', API_URL.format('player/next'), self.params)
 
     def prev(self):
-        self.__request('POST', self.apiUrl.format('player/previous'), self.params)
+        self.__request('POST', API_URL.format('player/previous'), self.params)
 
     def next_list(self):
         self.__switch_playlist(1)
@@ -55,20 +56,20 @@ class WebApi:
         self.__switch_playlist(-1)
 
     def shuffle(self):
-        res = self.__request('GET', self.apiUrl.format('player'))
+        res = self.__request('GET', API_URL.format('player'))
         params = dict(self.params)
         params['state'] = not res['shuffle_state']
-        self.__request('PUT', self.apiUrl.format('player/shuffle'), params)
+        self.__request('PUT', API_URL.format('player/shuffle'), params)
 
     def __switch_playlist(self, offset):
-        res = self.__request('GET', self.apiUrl.format('player'))
+        res = self.__request('GET', API_URL.format('player'))
         if res is None or not res['is_playing']:
             return
         playlistUir = res['context']['uri']
         if 'playlist' not in playlistUir:
             return
         playlistId = playlistUir.split(':')[-1]
-        res = self.__request('GET', self.apiUrl.format('playlists?limit=50'))
+        res = self.__request('GET', API_URL.format('playlists?limit=50'))
         items = res['items']
         index = 0
         while not items[index]['id'] == playlistId:
@@ -82,10 +83,10 @@ class WebApi:
 
         newList = items[index]['uri']
         data = {"context_uri": newList}
-        self.__request('PUT', self.apiUrl.format('player/play'), data=json.dumps(data))
+        self.__request('PUT', API_URL.format('player/play'), data=json.dumps(data))
 
     def __get_device(self):
-        res = self.__request('GET', self.apiUrl.format('player/devices'))
+        res = self.__request('GET', API_URL.format('player/devices'))
         if res:
             devices = res['devices']
             for device in devices:
@@ -105,9 +106,9 @@ class WebApi:
                 'grant_type': 'refresh_token',
                 'refresh_token': self.config.refreshToken
             }
-            res = requests.post('https://accounts.spotify.com/api/token', headers=headers, data=data)
+            res = requests.post(TOKEN_URL, headers=headers, data=data)
             if res.ok:
-                self.config.store_token('accessToken', res.json()['access_token'])
+                self.config.store_token(ACCESS_TOKEN, res.json()['access_token'])
             else:
                 self.__get_refresh_token(headers)
         else:
@@ -116,18 +117,18 @@ class WebApi:
 
     def __get_refresh_token(self, headers):
         sys.stdout.write("invalid refresh token, requesting new one...\n")
-        auth = spotipyAuth.SpotipyAuth(self.config)
+        auth = spotipyAuth.SpotipyAuth()
         sys.stdout.write("got authorization code, requesting new token...\n")
-        authCode = auth.get_auth_code()
+        authCode = auth.get_auth_code(self.config.clientId)
         data = {
             'grant_type': 'authorization_code',
             'code': authCode,
             'redirect_uri': 'http://localhost:{}/{}'.format(auth.port, auth.path)
         }
-        res = requests.post('https://accounts.spotify.com/api/token', headers=headers, data=data)
+        res = requests.post(TOKEN_URL, headers=headers, data=data)
         if res.ok:
-            self.config.store_token('accessToken', res.json()['access_token'])
-            self.config.store_token('refreshToken', res.json()['refresh_token'])
+            self.config.store_token(ACCESS_TOKEN, res.json()['access_token'])
+            self.config.store_token(REFRESH_TOKEN, res.json()['refresh_token'])
             sys.stdout.write("got new token...\n")
         else:
             sys.stderr.write('failed to get token')
@@ -146,7 +147,6 @@ class WebApi:
             else:
                 return None
         else:
-            print('uri: {} sc: {} json: {}'.format(uri, res.status_code, data))
             if retry:
                 if hasattr(self.config, 'refreshToken'):
                     self.__refresh_token()
