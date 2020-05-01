@@ -9,9 +9,9 @@ dependencies = ['click', 'requests', 'configparser']
 
 setup(
     name='spotipy-cli',
-    version='0.1.0',
+    version='0.2.0',
     url='https://github.com/kandrelczyk/spotipy-cli',
-    license='BSD',
+    license='Apache',
     author='Krzysztof Andrelczyk',
     author_email='cristof@vivaldi.net',
     description='CLI client for Spotify using Web API',
@@ -36,10 +36,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: POSIX',
-        'Operating System :: MacOS',
         'Operating System :: Unix',
-        'Operating System :: Microsoft :: Windows',
-        'Programming Language :: Python',
         'Programming Language :: Python :: 3',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ]

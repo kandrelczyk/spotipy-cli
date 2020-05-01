@@ -6,8 +6,9 @@ devices. This can be used to control headless players like Raspberry Pi running 
 ## Instalation
 
 ```commandline
-pip install spotipy-cli
+pip3 install spotipy-cli
 ```
+At least python3.6 is required.
 
 ## Setup
 
