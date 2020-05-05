@@ -99,7 +99,7 @@ def interactive(ctx):
             api.shuffle()
         time.sleep(0.5)
         char = _getch()
-    sys.stdout.write('Exiting...')
+    sys.stdout.write('Exiting...\n')
 
 
 def _getch():
