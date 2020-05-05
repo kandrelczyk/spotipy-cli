@@ -9,7 +9,7 @@ dependencies = ['click', 'requests', 'configparser']
 
 setup(
     name='spotipy-cli',
-    version='0.2.0',
+    version='0.3.0',
     url='https://github.com/kandrelczyk/spotipy-cli',
     license='Apache',
     author='Krzysztof Andrelczyk',
