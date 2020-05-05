@@ -1,7 +1,5 @@
 import click
-import sys
-import os
-import time
+import sys, tty, os, time, termios
 
 from . import config
 from . import webApi
@@ -62,6 +60,57 @@ def prev_list(ctx):
 def shuffle(ctx):
     """Toggle shuffle for playback"""
     ctx.obj['api'].shuffle()
+
+
+@cli.command()
+@click.pass_context
+def interactive(ctx):
+    """Interactive mode. Listen for commands from keyboard. Following commands are supported:\n
+     * p - play/pause\n
+     * n - next song\n
+     * b - previous song\n
+     * N - next playlist\n
+     * B - previous playlist\n
+     * s - toggle shuffle\n
+     * q - quit
+     """
+
+    sys.stdout.write('''Waiting for commands. 'q' to exit\n''')
+    char = _getch()
+    api = ctx.obj['api']
+    while not char == 'q':
+        if char == 'p':
+            sys.stdout.write('play/pause\n')
+            api.play()
+        elif char == 'n':
+            sys.stdout.write('next song\n')
+            api.next()
+        elif char == 'b':
+            sys.stdout.write('previous song\n')
+            api.prev()
+        elif char == 'N':
+            sys.stdout.write('next list\n')
+            api.next_list()
+        elif char == 'B':
+            sys.stdout.write('previous list\n')
+            api.prev_list()
+        elif char == 's':
+            sys.stdout.write('toggle shuffle\n')
+            api.shuffle()
+        time.sleep(0.5)
+        char = _getch()
+    sys.stdout.write('Exiting...')
+
+
+def _getch():
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        ch = sys.stdin.read(1)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+    return ch
 
 
 def main():
